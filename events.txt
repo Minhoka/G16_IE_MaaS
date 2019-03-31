@@ -1,11 +1,11 @@
 <checkIn>
 	<userId>12345</userId>
-	<timestamp>27/04/2019 | 15:30:26 GMT</timestamp>
+	<checkIn_ts>27/04/2019 | 15:30:26 GMT</checkIn_ts>
 </checkIn>
 
 <checkOut>
 	<userId>12345</userId>
-	<timestamp>27/04/2019 | 16:15:00 GMT</timestamp>
+	<checkOut_ts>27/04/2019 | 16:15:00 GMT</checkOut_ts>
 	<hasStudentDiscount>false</hasStudentDiscount>
 </checkOut>
 
