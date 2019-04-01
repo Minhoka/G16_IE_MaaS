@@ -8,11 +8,14 @@ import java.util.Collections;
 import java.util.Properties;
 import javax.xml.parsers.*;
 import java.io.*;
+import java.math.BigDecimal;
 
 import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
 
 import org.w3c.dom.*;
@@ -33,11 +36,18 @@ public class CustomerManagementService {
 			Element root = doc.getDocumentElement();
 			
 			messageParsed[0] = root.getNodeName();	// checkIn || checkOut
-			messageParsed[1] = root.getElementsByTagName("userId").item(0).getTextContent(); 	// Id do user
-			messageParsed[2] = root.getElementsByTagName("timestamp").item(0).getTextContent();	// timestamp
-
-			if (root.getChildNodes().getLength() == 3 )	// Significa que é um checkOut
+			switch(messageParsed[0])
+			{
+			case "checkIn":
+				messageParsed[1] = root.getElementsByTagName("userId").item(0).getTextContent(); 	// Id do user
+				messageParsed[2] = root.getElementsByTagName("timestamp").item(0).getTextContent();	// timestamp
+				break;
+			case "checkOut":
+				messageParsed[1] = root.getElementsByTagName("userId").item(0).getTextContent(); 	// Id do user
+				messageParsed[2] = root.getElementsByTagName("timestamp").item(0).getTextContent();	// timestamp
 				messageParsed[3] = root.getElementsByTagName("hasStudentDiscount").item(0).getTextContent();
+				break;
+			}
 			
 		} catch (ParserConfigurationException | SAXException | IOException e) {
 			e.printStackTrace();
@@ -47,29 +57,44 @@ public class CustomerManagementService {
 	}
 	
 	public static float calculatePriceOfTrip (Timestamp checkIn, Timestamp checkOut) {
-		//TODO Calcular o preço da viagem com base nos timestamps
 		
-		return 0;
+		long in = checkIn.getTime();
+		long out = checkOut.getTime();
+		float price = (float)(out - in) / 1000000;//TODO: verificar se este cálculo faz sentido
+		System.out.println("Price: " + price);	
+		
+		return price;
+	}
+	
+	public static float myRound (double dDouble) {
+		
+		BigDecimal bd = new BigDecimal(dDouble);
+		bd = bd.setScale(2, BigDecimal.ROUND_HALF_UP);
+		
+		return bd.floatValue();
 	}
 
 	public static void main(String[] args) {
 		
 		Properties props = new Properties();
-		props.put("bootstrap.servers", "54.175.92.214:9092"); // IP da instância AWS
+		props.put("bootstrap.servers", "52.205.173.161:9092"); // IP da instância AWS
 		props.put("group.id", "MaaS");
 		props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 		props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+		props.put("key.serializer","org.apache.kafka.common.serialization.StringSerializer");
+		props.put("value.serializer","org.apache.kafka.common.serialization.StringSerializer");
 		props.put("auto.commit.offset", "false"); // to commit manually
 		KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(props);
-		consumer.subscribe(Collections.singletonList("test")); // "test" é o tópico
+		KafkaProducer<String, String> producer = new KafkaProducer<String, String>(props);
+		consumer.subscribe(Collections.singletonList("MonitorMetro")); // "test" é o tópico
 		Connection conn = null;
 		boolean bd_ok = false;
 		
 		try {
 			Class.forName("com.mysql.cj.jdbc.Driver");
 			conn = DriverManager.getConnection(
-					"jdbc:mysql://mytestdb.cdi8jvvabsus.us-east-1.rds.amazonaws.com:3306/CustomerManangementService",
-					"storemessages", "storemessages"); // ("jdbc:mysql://yourAWSDBIP:3306/YOURDATABASENAME","YOURMasterUSERNAME","YOURPASSWORD")												
+					"jdbc:mysql://mytestdb.crjjgaudsykb.us-east-1.rds.amazonaws.com:3306/CustomerManagementService",
+					"storemessages", "pedro1234"); // ("jdbc:mysql://yourAWSDBIP:3306/YOURDATABASENAME","YOURMasterUSERNAME","YOURPASSWORD")												
 			bd_ok = true;
 		} catch (SQLException sqle) {
 			System.out.println("SQLException: " + sqle);
@@ -94,13 +119,22 @@ public class CustomerManagementService {
 					messageParsed[3] --> se for checkIn está a null. Se for checkOut true || false
 					*/
 					
-					int userId = Integer.parseInt(messageParsed[1]);
-					
 					if (bd_ok) {
-						PreparedStatement s;
+						PreparedStatement s = conn.prepareStatement("SELECT 1 FROM DUAL"); //só uma inicialização
+
+						int userId = Integer.parseInt(messageParsed[1]);
 						
-						if (messageParsed[0].equals("checkIn")) {
+ 						
+						switch(messageParsed[0])
+						{
+						case "checkIn":
+							System.out.println(" ******* Start Consuming checkIn *******");
+							
+							System.out.println(" INSERT INTO AccountManager "
+									+ "VALUES(" + topic + ", " + offset + ", " + userId + ", " + messageParsed[2] + ", null, null, null)");
+							
 							s = conn.prepareStatement("INSERT INTO AccountManager VALUES(?,?,?,?,?,?,?)");
+							
 							s.setString(1, topic);	// topic
 							s.setLong(2, offset);	// offset
 							s.setInt(3, userId);	// user_id
@@ -109,7 +143,13 @@ public class CustomerManagementService {
 							s.setString(6, null);	// price
 							s.setString(7, null);	// discount
 							s.executeUpdate();
-						} else {	// checkOut --> update na entrada do último checkIn (completar a informação que falta)
+							
+							System.out.println(" +++++ Finished Consuming checkIn +++++ ");
+							break;
+						case "checkOut":
+							
+							System.out.println(" ******* Start Consuming checkOut *******");
+							// checkOut --> update na entrada do último checkIn (completar a informação que falta)
 							
 							//Começamos por ir buscar o offset do último checkIn do user no transporte
 							long maxOffset = -1;	// -1 não quer dizer nada; só para inicializar a variável
@@ -123,7 +163,7 @@ public class CustomerManagementService {
 							while (maxOffsetFromQuery.next()) 
 								maxOffset = maxOffsetFromQuery.getLong("MAX(offset)");	//Offset máximo de um dado user num dado tópico. 
 																						//Equivale ao offset do seu último checkIn
-							
+							System.out.println("maxOffset: " + maxOffset);
 							//Ir buscar o timestamp do checkIn para poder calcular o preço a pagar
 							Timestamp checkInTimestamp = null;
 							
@@ -135,15 +175,22 @@ public class CustomerManagementService {
 							
 							while (checkInTimestampFromQuery.next()) 
 								checkInTimestamp = checkInTimestampFromQuery.getTimestamp("checkin_ts");
-
+							
 							Timestamp checkOutTimestamp = java.sql.Timestamp.valueOf(messageParsed[2]);	// O timestamp do checkout vem no evento
 							
+							System.out.println("checkInTimestamp: " + checkInTimestamp + " | checkOutTimestamp: " + checkOutTimestamp);
 							float price = calculatePriceOfTrip(checkInTimestamp, checkOutTimestamp); 
 							
-						    float discount = 0;
-						    
-						    if (messageParsed[3].equals("true"))	//Se houver desconto, é metade do preço
-						    	discount = price / 2;
+							float discount = 0;
+						
+							if (messageParsed[3].equals("true"))	//Se houver desconto, é metade do preço
+								discount = price / 2;
+
+							price = myRound(price);
+							discount = myRound(discount);
+							System.out.println("UPDATE AccountManager " + 
+									  "SET offset= " + offset + ", checkout_ts= " + checkOutTimestamp + ", price= " + price + ", discount= " + discount + 
+									  " WHERE topic= " + topic + " AND user_id= " + userId + " AND offset= " + maxOffset);
 							
 							s = conn.prepareStatement("UPDATE AccountManager " + 
 													  "SET offset= ?, checkout_ts=?, price=?, discount=? " + 
@@ -157,6 +204,24 @@ public class CustomerManagementService {
 							s.setInt(6, userId);
 							s.setLong(7, maxOffset);
 							s.executeUpdate();
+							
+							System.out.println(" +++++ Finished Consuming checkOut +++++ ");
+							
+							System.out.println(" ----- Producing clientRevenue ----- ");
+							
+							float revenue = price - discount;
+							revenue = myRound(revenue);
+							System.out.println("<clientRevenue><value>"+ revenue +"</value><date>" + checkOutTimestamp + "</date></clienteRevenue>");
+							ProducerRecord<String, String> pRecord = new ProducerRecord<>("RevenueMetro", "MaaS", "<clientRevenue><value>"+ revenue +"</value><date>" + checkOutTimestamp + "</date></clienteRevenue>");
+							try 
+							{ 
+								producer.send(pRecord);
+							} 
+							catch (Exception e) 
+							{ 
+								e.printStackTrace();
+							} 
+							break;
 						}
 						s.close();
 					}	
