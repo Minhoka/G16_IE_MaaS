@@ -1,9 +1,9 @@
 BD: CustomerManangementService
 
-DROP DATABASE IF EXISTS CustomerManangementService;
-CREATE DATABASE IF NOT EXISTS CustomerManangementService;
+DROP DATABASE IF EXISTS CustomerManagementService;
+CREATE DATABASE IF NOT EXISTS CustomerManagementService;
 
-USE CustomerManangementService;
+USE CustomerManagementService;
 
 CREATE TABLE AccountManager(
 topic VARCHAR(100) NOT NULL,
