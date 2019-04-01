@@ -3,10 +3,10 @@ BD: CustomerManangementService
 DROP DATABASE IF EXISTS CustomerManangementService;
 CREATE DATABASE IF NOT EXISTS CustomerManangementService;
 
-use CustomerManangementService;
+USE CustomerManangementService;
 
 CREATE TABLE AccountManager(
-topic INT NOT NULL,
+topic VARCHAR(100) NOT NULL,
 offset BIGINT NOT NULL,
 user_id INT NOT NULL,
 checkin_ts DATETIME NOT NULL,
@@ -18,15 +18,16 @@ PRIMARY KEY (topic, offset)
 
 
 
+
 BD: ServiceOfRevenueDistribution;
 
 DROP DATABASE IF EXISTS ServiceOfRevenueDistribution;
 CREATE DATABASE IF NOT EXISTS ServiceOfRevenueDistribution;
 
-use ServiceOfRevenueDistribution;
+USE ServiceOfRevenueDistribution;
 
 CREATE TABLE Settlement(
-topic INT NOT NULL,
+topic VARCHAR(100) NOT NULL,
 offset BIGINT NOT NULL,
 revenue FLOAT NOT NULL,
 day DATE NOT NULL,
