@@ -9,6 +9,13 @@
 	<hasStudentDiscount>false</hasStudentDiscount>
 </checkOut>
 
+//Uber
+<checkOut>
+	<userId>12345</userId>
+	<timestamp>2019-04-27 16:15:00</timestamp>
+	<operatorPrice>5.00</operatorPrice>
+</checkOut>
+
 <clientRevenue>
 	<value>3.5</value>
 	<date>2019-03-31</date>

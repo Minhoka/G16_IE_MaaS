@@ -30,6 +30,6 @@ CREATE TABLE Settlement(
 topic VARCHAR(100) NOT NULL,
 offset BIGINT NOT NULL,
 revenue FLOAT NOT NULL,
-day DATE NOT NULL,
+day VARCHAR(100) NOT NULL,
 PRIMARY KEY (topic, day)
 );
