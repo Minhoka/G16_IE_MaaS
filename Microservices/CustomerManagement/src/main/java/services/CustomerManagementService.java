@@ -103,7 +103,7 @@ public class CustomerManagementService {
 	public static void main(String[] args) {
 		
 		Properties props = new Properties();
-		props.put("bootstrap.servers", "100.26.43.176:9092"); // IP da instancia AWS
+		props.put("bootstrap.servers", "3.90.58.58:9092"); // IP da instancia AWS
 		props.put("group.id", "MaaS");
 		props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 		props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
