@@ -22,7 +22,7 @@ public class ServiceOfRevenueDistribution {
 	
 	public static String[] parseMessage(String message) {
 		
-		String[] messageParsed = new String[2];	// Isto e o que vai ser devolvido neste método. É o que "importa" na mensagem
+		String[] messageParsed = new String[4];	// Isto e o que vai ser devolvido neste método. E o que "importa" na mensagem
 	
 		try {
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -33,8 +33,10 @@ public class ServiceOfRevenueDistribution {
 			Element root = doc.getDocumentElement();
 			
 			//Aqui nao importa termos o elemento "parent" do XML
-			messageParsed[0] = root.getElementsByTagName("value").item(0).getTextContent();	// value
-			messageParsed[1] = root.getElementsByTagName("date").item(0).getTextContent();	// date
+			messageParsed[0] = root.getElementsByTagName("price").item(0).getTextContent();	// price
+			messageParsed[1] = root.getElementsByTagName("discount").item(0).getTextContent();	// discount
+			messageParsed[2] = root.getElementsByTagName("revenue").item(0).getTextContent();	// revenue
+			messageParsed[3] = root.getElementsByTagName("date").item(0).getTextContent();	// date
 			
 		} catch (ParserConfigurationException | SAXException | IOException e) {
 			e.printStackTrace();
@@ -46,7 +48,7 @@ public class ServiceOfRevenueDistribution {
 	public static void main(String[] args) {
 
 		Properties props = new Properties();
-		props.put("bootstrap.servers", "3.90.58.58:9092"); // IP da instancia AWS
+		props.put("bootstrap.servers", "3.93.68.133:9092"); // IP da instancia AWS
 		props.put("group.id", "MaaS");
 		props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 		props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
@@ -87,26 +89,32 @@ public class ServiceOfRevenueDistribution {
 					long offset = record.offset();
 					
 					String[] messageParsed = parseMessage(message);	//Partir a mensagem XML em strings
-					//messageParsed[0] --> value
-					//messageParsed[1] --> date
+					/*
+					messageParsed[0] --> price
+					messageParsed[1] --> discount
+					messageParsed[2] --> revenue
+					messageParsed[3] --> date
+					 */
 					
-					float tripRevenue = Float.parseFloat(messageParsed[0]);
+					float tripPrice = Float.parseFloat(messageParsed[0]);
+					float tripDiscount = Float.parseFloat(messageParsed[1]);
+					float tripRevenue = Float.parseFloat(messageParsed[2]);
 					
 					if (bd_ok) {
 						PreparedStatement s;
 						
-						System.out.println(" ******* Start Consuming clientRevenue ******* \n");
+						System.out.println(" ******* Start Consuming paymentInfo ******* \n");
 						
 						//Se este dia ainda nao teve qualquer registo, inicializar uma linha na tabela para ele
 						
 						//Verificar se ja ha uma linha deste dia e deste topico
 						//Exemplo >> SELECT * FROM Settlement WHERE topic="RevenueMetro" AND day="2019-04-02";
 						System.out.println("SELECT * FROM Settlement"+ 
-								" WHERE topic=\"" + topic + "\" AND day=\"" + messageParsed[1] + "\"");
+								" WHERE topic=\"" + topic + "\" AND day=\"" + messageParsed[3] + "\"");
 						
 						s = conn.prepareStatement("SELECT * " + 
 								  "FROM Settlement " + 
-								  "WHERE topic=\"" + topic + "\" AND day=\"" +  messageParsed[1] + "\""
+								  "WHERE topic=\"" + topic + "\" AND day=\"" +  messageParsed[3] + "\""
 								  );
 						ResultSet topicAndDay = s.executeQuery();
 						
@@ -116,31 +124,35 @@ public class ServiceOfRevenueDistribution {
 						
 						if (!topicAndDayExists) { // Criar o registo desse topico/dia
 							
-							//Exemplo >> INSERT INTO Settlement VALUES("RevenueMetro",3,0,"2019-04-02");
+							//Exemplo >> INSERT INTO Settlement VALUES("RevenueMetro",3,0,0,0,"2019-04-02");
 							System.out.println("INSERT INTO Settlement"+ 
-									" VALUES (" + topic + ", " + offset + ", " + "0," + messageParsed[1] + ") ");
+									" VALUES (" + topic + "," + offset + ",0,0,0," + messageParsed[3] + ") ");
 							
-							s = conn.prepareStatement("INSERT INTO Settlement VALUES(?,?,?,?)");
+							s = conn.prepareStatement("INSERT INTO Settlement VALUES(?,?,?,?,?,?)");
 							
 							s.setString(1, topic);	// topic
 							s.setLong(2, offset);	// offset
-							s.setFloat(3, 0);	// revenue, comeca a 0 para cada novo dia 
-							s.setString(4, messageParsed[1]);	// day
+							s.setFloat(3, 0);	// total_paid, comeca a 0 para cada novo dia 
+							s.setFloat(4, 0);	// total_discount, comeca a 0 para cada novo dia 
+							s.setFloat(5, 0);	// revenue, comeca a 0 para cada novo dia 
+							s.setString(6, messageParsed[3]);	// day
 							s.executeUpdate();
 						}
 																
-						//Exemplo >> UPDATE Settlement SET offset=2, revenue=revenue+10 WHERE topic="RevenueMetro" AND day="2019-04-02";
-						System.out.println("UPDATE Settlement SET offset=" + offset + ", revenue=revenue+" + tripRevenue + 
-											" WHERE topic=\"" + topic + "\" AND day=\"" + messageParsed[1] + "\"\n");
+						//Exemplo >> UPDATE Settlement SET offset=2, total_paid=total_paid+20, total_discount=total_discount+10, revenue=revenue+10 WHERE topic="RevenueMetro" AND day="2019-04-02";
+						System.out.println("UPDATE Settlement SET offset=" + offset + ", total_paid=total_paid+" + tripPrice + ", total_discount=total_discount+" + tripDiscount + ", revenue=revenue+" + tripRevenue +						 
+											" WHERE topic=\"" + topic + "\" AND day=\"" + messageParsed[3] + "\"\n");
 						
 						s = conn.prepareStatement("UPDATE Settlement " + 
-												  "SET offset= ?, revenue=revenue+? " + 
+												  "SET offset= ?, total_paid=total_paid+?, total_discount=total_discount+?, revenue=revenue+? " + 
 												  "WHERE topic=? AND day=?"
 												 );
 						s.setLong(1, offset);
-						s.setFloat(2, tripRevenue);
-						s.setString(3, topic);
-						s.setString(4, messageParsed[1]);
+						s.setFloat(2, tripPrice);
+						s.setFloat(3, tripDiscount);
+						s.setFloat(4, tripRevenue);
+						s.setString(5, topic);
+						s.setString(6, messageParsed[3]);
 						s.executeUpdate();
 						
 						System.out.println(" +++++ Finished Consuming clientRevenue +++++ \n");

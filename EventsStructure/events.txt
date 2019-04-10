@@ -21,7 +21,9 @@ Topic: Monitor<Operator>
 -------------------------------------------------------------
 Topic: Revenue<Operator>
 
-<clientRevenue>
-	<value>3.5</value>
+<paymentInfo>
+	<price>10.00</price>
+	<discount>5.00</discount>
+	<revenue>5.00</revenue>
 	<date>2019-03-31</date>
-</clienteRevenue>
+</paymentInfo>

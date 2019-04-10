@@ -103,7 +103,7 @@ public class CustomerManagementService {
 	public static void main(String[] args) {
 		
 		Properties props = new Properties();
-		props.put("bootstrap.servers", "3.90.58.58:9092"); // IP da instancia AWS
+		props.put("bootstrap.servers", "3.93.68.133:9092"); // IP da instancia AWS
 		props.put("group.id", "MaaS");
 		props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 		props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
@@ -245,7 +245,7 @@ public class CustomerManagementService {
 								
 								System.out.println(" +++++ Finished Consuming checkOut +++++ \n");
 								
-								System.out.println(" ----- Producing clientRevenue ----- \n");
+								System.out.println(" ----- Producing paymentInfo ----- \n");
 
 						        String checkOutDate = timestampToDate(checkOutTimestamp);	//Devolve uma data no formato "2017-06-15"
 						        
@@ -254,10 +254,11 @@ public class CustomerManagementService {
 								
 								String revenueOperatorTopic = getRevenueTopic(topic);
 								
-								System.out.println("Sending message: <clientRevenue><value>"+ revenue +"</value><date>" + checkOutDate + "</date></clientRevenue>\n"
+								System.out.println("Sending message: "
+										+ "<paymentInfo><price>" + price + "</price><discount>" + discount + "</discount><revenue>" + revenue + "</revenue><date>" + checkOutDate + "</date></paymentInfo>\n"
 										+ "To topic: " + revenueOperatorTopic);
 
-								ProducerRecord<String, String> revenueMessage = new ProducerRecord<>(revenueOperatorTopic, "MaaS", "<clientRevenue><value>"+ revenue +"</value><date>" + checkOutDate + "</date></clientRevenue>");
+								ProducerRecord<String, String> revenueMessage = new ProducerRecord<>(revenueOperatorTopic, "MaaS", "<paymentInfo><price>" + price + "</price><discount>" + discount + "</discount><revenue>" + revenue + "</revenue><date>" + checkOutDate + "</date></paymentInfo>");
 								
 								try{ 
 									producer.send(revenueMessage);	// Fire-and-forget
