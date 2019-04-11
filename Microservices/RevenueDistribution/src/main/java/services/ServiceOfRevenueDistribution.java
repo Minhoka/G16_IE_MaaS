@@ -132,19 +132,19 @@ public class ServiceOfRevenueDistribution {
 							
 							s.setString(1, topic);	// topic
 							s.setLong(2, offset);	// offset
-							s.setFloat(3, 0);	// total_paid, comeca a 0 para cada novo dia 
+							s.setFloat(3, 0);	// total_price, comeca a 0 para cada novo dia 
 							s.setFloat(4, 0);	// total_discount, comeca a 0 para cada novo dia 
 							s.setFloat(5, 0);	// revenue, comeca a 0 para cada novo dia 
 							s.setString(6, messageParsed[3]);	// day
 							s.executeUpdate();
 						}
 																
-						//Exemplo >> UPDATE Settlement SET offset=2, total_paid=total_paid+20, total_discount=total_discount+10, revenue=revenue+10 WHERE topic="RevenueMetro" AND day="2019-04-02";
-						System.out.println("UPDATE Settlement SET offset=" + offset + ", total_paid=total_paid+" + tripPrice + ", total_discount=total_discount+" + tripDiscount + ", revenue=revenue+" + tripRevenue +						 
+						//Exemplo >> UPDATE Settlement SET offset=2, total_price=total_price+20, total_discount=total_discount+10, revenue=revenue+10 WHERE topic="RevenueMetro" AND day="2019-04-02";
+						System.out.println("UPDATE Settlement SET offset=" + offset + ", total_price=total_price+" + tripPrice + ", total_discount=total_discount+" + tripDiscount + ", revenue=revenue+" + tripRevenue +						 
 											" WHERE topic=\"" + topic + "\" AND day=\"" + messageParsed[3] + "\"\n");
 						
 						s = conn.prepareStatement("UPDATE Settlement " + 
-												  "SET offset= ?, total_paid=total_paid+?, total_discount=total_discount+?, revenue=revenue+? " + 
+												  "SET offset= ?, total_price=total_price+?, total_discount=total_discount+?, revenue=revenue+? " + 
 												  "WHERE topic=? AND day=?"
 												 );
 						s.setLong(1, offset);

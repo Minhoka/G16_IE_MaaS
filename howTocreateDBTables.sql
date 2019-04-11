@@ -28,7 +28,7 @@ USE ServiceOfRevenueDistribution;
 CREATE TABLE Settlement(
 topic VARCHAR(100) NOT NULL,
 offset BIGINT NOT NULL,
-total_paid FLOAT NOT NULL,
+total_price FLOAT NOT NULL,
 total_discount FLOAT NOT NULL,
 revenue FLOAT NOT NULL,
 day VARCHAR(100) NOT NULL,
