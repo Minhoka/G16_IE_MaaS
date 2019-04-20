@@ -3,7 +3,8 @@ Feedback Sprint2:
 //DONE
 - Consumir BD pelo dreamfactory
 
-- Partições, cluster Kafka
+//DONE
+- Particoes
 
 //DONE
 - Discount na tabela do RevenueDistribution. O CustomerService manda um evento com price, discount e revenue para o outro. O RevenueDistribution guarda e acumula tudo.
@@ -15,4 +16,6 @@ Extras
 
 - Explorar WSDL
 
-- Extra: Usar o offset para alguma coisa (?)
+- Usar o offset para alguma coisa (?)
+
+- Cluster Kafka
