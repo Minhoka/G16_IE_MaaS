@@ -48,7 +48,7 @@ public class ServiceOfRevenueDistribution {
 	public static void main(String[] args) {
 
 		Properties props = new Properties();
-		props.put("bootstrap.servers", "3.93.68.133:9092"); // IP da instancia AWS
+		props.put("bootstrap.servers", "52.90.185.138:9092"); // IP da instancia AWS
 		props.put("group.id", "MaaS");
 		props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 		props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
@@ -70,11 +70,11 @@ public class ServiceOfRevenueDistribution {
 		try {
 			Class.forName("com.mysql.cj.jdbc.Driver");
 			conn = DriverManager.getConnection(
-					"jdbc:mysql://microservices.cdi8jvvabsus.us-east-1.rds.amazonaws.com:3306/ServiceOfRevenueDistribution",
-					"microservices", "microservices"); // ("jdbc:mysql://yourAWSDBIP:3306/YOURDATABASENAME","YOURMasterUSERNAME","YOURPASSWORD")												
+					"jdbc:mysql://mytestdb.crjjgaudsykb.us-east-1.rds.amazonaws.com:3306/ServiceOfRevenueDistribution",
+					"storemessages", "pedro1234"); // ("jdbc:mysql://yourAWSDBIP:3306/YOURDATABASENAME","YOURMasterUSERNAME","YOURPASSWORD")												
 			bd_ok = true;
 		} catch (SQLException sqle) {
-			System.out.println("SQLException: " + sqle);
+			sqle.printStackTrace();
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}

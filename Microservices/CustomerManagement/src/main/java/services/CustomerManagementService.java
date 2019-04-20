@@ -19,9 +19,10 @@ import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
@@ -99,11 +100,22 @@ public class CustomerManagementService {
 				return "";
 		}
 	}
+	
+	private static class DemoProducerCallback implements Callback {
+		@Override
+		public void onCompletion(RecordMetadata recordMetadata, Exception e) {
+			if (e != null) { 
+				e.printStackTrace();
+			}
+		}
+	}
 
 	public static void main(String[] args) {
 		
+		System.out.println(" Starting Customer Management Service \n");
+		
 		Properties props = new Properties();
-		props.put("bootstrap.servers", "3.93.68.133:9092"); // IP da instancia AWS
+		props.put("bootstrap.servers", "52.90.185.138:9092"); // IP da instancia AWS
 		props.put("group.id", "MaaS");
 		props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 		props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
@@ -126,14 +138,16 @@ public class CustomerManagementService {
 		try {
 			Class.forName("com.mysql.cj.jdbc.Driver");
 			conn = DriverManager.getConnection(
-					"jdbc:mysql://microservices.cdi8jvvabsus.us-east-1.rds.amazonaws.com:3306/CustomerManagementService",
-					"microservices", "microservices"); // ("jdbc:mysql://yourAWSDBIP:3306/YOURDATABASENAME","YOURMasterUSERNAME","YOURPASSWORD")												
+					"jdbc:mysql://mytestdb.crjjgaudsykb.us-east-1.rds.amazonaws.com:3306/CustomerManagementService",
+					"storemessages", "pedro1234"); // ("jdbc:mysql://yourAWSDBIP:3306/YOURDATABASENAME","YOURMasterUSERNAME","YOURPASSWORD")												
 			bd_ok = true;
 		} catch (SQLException sqle) {
-			System.out.println("SQLException: " + sqle);
+			sqle.printStackTrace();
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
+		
+		System.out.println(" Starting while (true) Cycle \n");
 		
 		try {
 			while (true) {
@@ -259,9 +273,9 @@ public class CustomerManagementService {
 										+ "To topic: " + revenueOperatorTopic);
 
 								ProducerRecord<String, String> revenueMessage = new ProducerRecord<>(revenueOperatorTopic, "MaaS", "<paymentInfo><price>" + price + "</price><discount>" + discount + "</discount><revenue>" + revenue + "</revenue><date>" + checkOutDate + "</date></paymentInfo>");
-								
+																
 								try{ 
-									producer.send(revenueMessage);	// Fire-and-forget
+									producer.send(revenueMessage, new DemoProducerCallback());	//Asynchronous send
 								} 
 								catch (Exception e){ 
 									e.printStackTrace();
