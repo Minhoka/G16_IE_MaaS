@@ -1,0 +1,3 @@
+- Mudar a maneira como escrevemos na BD da cloud --> usar WSDL ou Dreamfactory
+
+- Fazer documentos explícitos onde especificamos como são criadas a tabela local e da cloud
