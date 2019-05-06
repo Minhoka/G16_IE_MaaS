@@ -1,9 +1,6 @@
 Feedback Sprint2:
 
 //DONE
-- Consumir BD pelo dreamfactory
-
-//DONE
 - Particoes
 
 //DONE
