@@ -87,18 +87,9 @@ public class CustomerManagementService {
 	}
 	
 	public static String getRevenueTopic (String topic) {
+		String transportType = topic.substring(7);	//Sacar o tipo de transporte
 		
-		switch(topic) {	// Mandar a mensagem para o topico do operador correto
-			case "MonitorMetro":
-				return "RevenueMetro";
-			case "MonitorTrain":
-				return "RevenueTrain";
-			case "MonitorUber":
-				return "RevenueUber";
-			default:
-				System.out.println("I don't know to which topic I should send the message to!");
-				return "";
-		}
+		return "Revenue" + transportType;
 	}
 	
 	private static class DemoProducerCallback implements Callback {
