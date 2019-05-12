@@ -48,7 +48,7 @@ public class ServiceOfRevenueDistribution {
 	public static void main(String[] args) {
 
 		Properties props = new Properties();
-		props.put("bootstrap.servers", "52.90.185.138:9092"); // IP da instancia AWS
+		props.put("bootstrap.servers", "18.234.252.129:9092"); // IP da instancia AWS
 		props.put("group.id", "MaaS");
 		props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 		props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
