@@ -116,12 +116,7 @@ public class CustomerManagementService {
 		KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(props);
 		KafkaProducer<String, String> producer = new KafkaProducer<String, String>(props);
 		
-		// Meter o subscriber a subscrever os topicos que queremos
-		ArrayList<String> listOfTopics = new ArrayList<String> ();
-		listOfTopics.add("MonitorMetro");
-		listOfTopics.add("MonitorTrain");
-		listOfTopics.add("MonitorUber");
-		consumer.subscribe(listOfTopics);
+
 		
 		Connection conn = null;
 		boolean bd_ok = false;
@@ -137,10 +132,33 @@ public class CustomerManagementService {
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
-		
-		System.out.println(" Starting while (true) Cycle \n");
-		
+			
 		try {
+			
+
+			// Meter o subscriber a subscrever os topicos que queremos
+			System.out.println(" GETTING OPERATORS \n");
+			ArrayList<String> listOfTopics = new ArrayList<String> ();
+			String monitorName = "";
+			
+			PreparedStatement s = null; //so uma inicializacao
+			s = conn.prepareStatement("SELECT name FROM operator");
+			ResultSet rsetMonitor = s.executeQuery();
+			while(rsetMonitor.next()) {			
+
+				
+				monitorName = rsetMonitor.getString("name");
+				monitorName = "Monitor" + monitorName;
+				listOfTopics.add(monitorName);
+				
+				System.out.println(" ADDED " + monitorName + ". \n");
+				
+			}
+				
+			consumer.subscribe(listOfTopics);
+			
+			System.out.println(" Starting while (true) Cycle \n");
+			
 			while (true) {
 				ConsumerRecords<String, String> records = consumer.poll(100);
 				
@@ -159,7 +177,6 @@ public class CustomerManagementService {
 					*/
 					
 					if (bd_ok) {
-						PreparedStatement s = null; //so uma inicializacao
 
 						int userId = Integer.parseInt(messageParsed[1]);
  						
