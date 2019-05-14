@@ -57,13 +57,6 @@ public class ServiceOfRevenueDistribution {
 		props.put("auto.commit.offset", "false"); // to commit manually
 		KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(props);
 		
-		// Meter o subscriber a subscrever os topicos que queremos
-		ArrayList<String> listOfTopics = new ArrayList<String> ();
-		listOfTopics.add("RevenueMetro");
-		listOfTopics.add("RevenueTrain");
-		listOfTopics.add("RevenueUber");
-		consumer.subscribe(listOfTopics);
-		
 		Connection conn = null;
 		boolean bd_ok = false;
 		
@@ -80,6 +73,31 @@ public class ServiceOfRevenueDistribution {
 		}
 		
 		try {
+			
+			// Meter o subscriber a subscrever os topicos que queremos
+			System.out.println(" GETTING OPERATORS \n");
+			ArrayList<String> listOfTopics = new ArrayList<String> ();
+			String monitorName = "";
+			
+			PreparedStatement s = null; //so uma inicializacao
+			s = conn.prepareStatement("SELECT name FROM operator");
+			ResultSet rsetMonitor = s.executeQuery();
+			
+			while(rsetMonitor.next()) {	
+				
+				monitorName = rsetMonitor.getString("name");
+				monitorName = "Revenue" + monitorName;
+				listOfTopics.add(monitorName);
+				
+				System.out.println(" ADDED " + monitorName + ". \n");
+				
+			}
+				
+			consumer.subscribe(listOfTopics);
+			
+			
+			System.out.println(" Starting while (true) Cycle \n");
+			
 			while (true) {
 				ConsumerRecords<String, String> records = consumer.poll(100);
 				for (ConsumerRecord<String, String> record : records) {
@@ -101,8 +119,7 @@ public class ServiceOfRevenueDistribution {
 					float tripRevenue = Float.parseFloat(messageParsed[2]);
 					
 					if (bd_ok) {
-						PreparedStatement s;
-						
+												
 						System.out.println(" ******* Start Consuming paymentInfo ******* \n");
 						
 						//Se este dia ainda nao teve qualquer registo, inicializar uma linha na tabela para ele
