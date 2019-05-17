@@ -28,9 +28,104 @@ import org.xml.sax.SAXException;
 
 public class CustomerManagementService {
 
-	public static String[] parseMessage(String message, String topic) {
+	
+	static String event = "";
+	static String tariff = "";
+	static int userId = 0;
+	static String timestamp = "";
+	static double studentDiscount = 0.0;
+	static double operatorPrice = 0.0;
+	static double fixedPrice = 0.0;
+	
+	public static void validateEventStructure(Element root, String topic, Connection conn) {
 		
-		String[] messageParsed = new String[4];	// Isto e o que vai ser devolvido neste metodo. E o que "importa" na mensagem
+		System.out.println(" Start Structure validation for " + tariff + " in " + topic + ". \n");
+
+		String auxTopic = topic.replace("Monitor", ""); 
+
+		try {
+			if(event.equals("checkOut")) {
+				PreparedStatement s = null; //so uma inicializacao
+				s = conn.prepareStatement("SELECT events_structure FROM operator_services WHERE operator =\"" + auxTopic + "\" AND tariff =\"" + tariff + "\"");
+				ResultSet rsetEventStructure = s.executeQuery();
+				if(rsetEventStructure.next()) {			
+					
+					DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+					DocumentBuilder builder = factory.newDocumentBuilder();
+					ByteArrayInputStream input = new ByteArrayInputStream(rsetEventStructure.getString("events_structure").getBytes("UTF-8"));
+					
+					Document doc = builder.parse(input);
+					Element auxRoot = doc.getDocumentElement();
+						
+					//String auxEvent = auxRoot.getNodeName();	// checkIn || checkOut (TODO:atualmente só checkOut pode ser dinâmico)
+					
+					NodeList rootElements = root.getElementsByTagName("*");
+					NodeList auxRootElements = auxRoot.getElementsByTagName("*");
+					
+					if(auxRootElements.getLength() == rootElements.getLength())
+					{	
+						for ( int i = 0; i < auxRootElements.getLength(); i++)
+						{
+							if(!(auxRootElements.item(i).getNodeName().equals(rootElements.item(i).getNodeName()))) {
+								System.out.println(" Invalid Structure for " + tariff + " in " + topic + ". (name) \n");
+								throw new RuntimeException(" Invalid Structure for " + tariff + " in " + topic + ". (name) ");
+							}
+						}
+					}
+					else
+					{
+						System.out.println(" Invalid Structure for " + tariff + " in " + topic + ". (size) \n");
+						throw new RuntimeException(" Invalid Structure for " + tariff + " in " + topic + ". (size) ");
+					}
+	
+					System.out.println(" Structure Validated for " + tariff + " in " + topic + ". \n");
+					
+					
+				}
+				else
+				{
+					System.out.println(" tariff " + tariff + " does not exist for " + topic + ". \n");
+					throw new RuntimeException(" tariff " + tariff + " does not exist for " + topic + ".");
+
+				}
+			}
+			else
+			{
+				//checkIn <checkIn><tariff>variablePrice</tariff><userId>4</userId><timestamp>2019-04-29 15:33:26</timestamp></checkIn>
+				if (root.getElementsByTagName("*") == null || root.getElementsByTagName("*").getLength() != 3)
+				{
+					System.out.println(" Invalid Structure for " + tariff + " in " + topic + ". (size) \n");
+					throw new RuntimeException(" Invalid Structure for " + tariff + " in " + topic + ". (size) \n");
+				}
+				else {
+					if (root.getElementsByTagName("tariff") == null && root.getElementsByTagName("tariff").item(0) == null)
+					{
+						System.out.println(" Invalid Structure for " + tariff + " in " + topic + ". (tariff) \n");
+						throw new RuntimeException(" Invalid Structure for " + tariff + " in " + topic + ". (tariff) \n");
+					}
+					if (root.getElementsByTagName("userId") == null && root.getElementsByTagName("userId").item(0) == null)
+					{
+						System.out.println(" Invalid Structure for " + tariff + " in " + topic + ". (userId) \n");
+						throw new RuntimeException(" Invalid Structure for " + tariff + " in " + topic + ". (userId) \n");
+					}
+					if (root.getElementsByTagName("timestamp") == null && root.getElementsByTagName("timestamp").item(0) == null)
+					{
+						System.out.println(" Invalid Structure for " + tariff + " in " + topic + ". (timestamp) \n");
+						throw new RuntimeException(" Invalid Structure for " + tariff + " in " + topic + ". (timestamp) \n");
+					}
+					
+				}
+				
+				System.out.println(" Structure Validated for " + tariff + " in " + topic + ". \n");
+		
+			}
+		} catch (SQLException | ParserConfigurationException | SAXException | IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static void parseMessage(String message, String topic, Connection conn) {
+		
 	
 		try {
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -40,40 +135,44 @@ public class CustomerManagementService {
 			
 			Element root = doc.getDocumentElement();
 			
-			messageParsed[0] = root.getNodeName();	// checkIn || checkOut
-			messageParsed[1] = root.getElementsByTagName("userId").item(0).getTextContent(); 	// Id do user
-			messageParsed[2] = root.getElementsByTagName("timestamp").item(0).getTextContent();	// timestamp
+			event = root.getNodeName();	// checkIn || checkOut
+			tariff = root.getElementsByTagName("tariff").item(0).getTextContent(); // operatorPrice || fixedPrice || variablePrice
+
+			validateEventStructure(root, topic, conn);
 			
-			if (messageParsed[0].equals("checkOut")) {	
-				if (!topic.equals("MonitorUber")) {	
-					messageParsed[3] = root.getElementsByTagName("hasStudentDiscount").item(0).getTextContent();
-				} else {
-					messageParsed[3] = root.getElementsByTagName("operatorPrice").item(0).getTextContent();
-				}
-			}
+			if (root.getElementsByTagName("userId") != null && root.getElementsByTagName("userId").item(0) != null)
+				userId =  Integer.parseInt(root.getElementsByTagName("userId").item(0).getTextContent()); 	// Id do user
+			if (root.getElementsByTagName("timestamp") != null && root.getElementsByTagName("timestamp").item(0) != null)
+				timestamp = root.getElementsByTagName("timestamp").item(0).getTextContent();	// timestamp
+			if (root.getElementsByTagName("hasStudentDiscount") != null && root.getElementsByTagName("hasStudentDiscount").item(0) != null)
+				studentDiscount = Double.parseDouble(root.getElementsByTagName("hasStudentDiscount").item(0).getTextContent()); 
+			if (root.getElementsByTagName("operatorPrice") != null && root.getElementsByTagName("operatorPrice").item(0) != null)
+				operatorPrice = Double.parseDouble(root.getElementsByTagName("operatorPrice").item(0).getTextContent()); 
+			if (root.getElementsByTagName("fixedPrice") != null && root.getElementsByTagName("fixedPrice").item(0) != null)
+				fixedPrice = Double.parseDouble(root.getElementsByTagName("fixedPrice").item(0).getTextContent()); 
+			
 			
 		} catch (ParserConfigurationException | SAXException | IOException e) {
 			e.printStackTrace();
 		}
 
-		return messageParsed;
 	}
 	
-	public static float calculatePriceOfTrip (Timestamp checkIn, Timestamp checkOut) {
+	public static double calculatePriceOfTrip (Timestamp checkIn, Timestamp checkOut) {
 		
 		long in = checkIn.getTime();
 		long out = checkOut.getTime();
-		float price = (float)(out - in) / 1000000;
+		double price = (double)(out - in) / 1000000;
 		
 		return price;
 	}
 	
-	public static float myRound (double dDouble) { // Arredonda o valor para 2 casas decimais
+	public static double myRound (double dDouble) { // Arredonda o valor para 2 casas decimais
 		
 		BigDecimal bd = new BigDecimal(dDouble);
 		bd = bd.setScale(2, BigDecimal.ROUND_HALF_UP);
 		
-		return bd.floatValue();
+		return bd.doubleValue();
 	}
 	
 	public static String timestampToDate (Timestamp timestamp) {
@@ -168,31 +267,26 @@ public class CustomerManagementService {
 					String topic = record.topic();	//topico onde a mensagem foi publicada
 					long offset = record.offset();
 					
-					String[] messageParsed = parseMessage(message, topic);	//Partir a mensagem XML em strings
-					/*
-					messageParsed[0] --> "checkIn" || "checkOut"
-					messageParsed[1] --> userId
-					messageParsed[2] --> timestamp
-					messageParsed[3] --> se for checkIn esta a null. Se for checkOut true || false. Se for Uber e o valor
-					*/
+					parseMessage(message, topic, conn);	//Partir a mensagem XML em strings
+	
 					
 					if (bd_ok) {
 
-						int userId = Integer.parseInt(messageParsed[1]);
+						
  						
-						switch(messageParsed[0]) {
+						switch(event) {
 							case "checkIn":
 								System.out.println(" ******* Start Consuming checkIn ******* \n");
 								
 								System.out.println(" INSERT INTO AccountManager "
-										+ "VALUES(" + topic + ", " + offset + ", " + userId + ", " + messageParsed[2] + ", null, null, null) \n");
+										+ "VALUES(" + topic + ", " + offset + ", " + userId + ", " + timestamp + ", null, null, null) \n");
 								
 								s = conn.prepareStatement("INSERT INTO AccountManager VALUES(?,?,?,?,?,?,?)");
 								
 								s.setString(1, topic);	// topic
 								s.setLong(2, offset);	// offset
 								s.setInt(3, userId);	// user_id
-								s.setTimestamp(4, java.sql.Timestamp.valueOf(messageParsed[2]));	// checkin_ts
+								s.setTimestamp(4, java.sql.Timestamp.valueOf(timestamp));	// checkin_ts
 								s.setTimestamp(5, null);	// checkout_ts
 								s.setString(6, null);	// price
 								s.setString(7, null);	// discount
@@ -231,23 +325,24 @@ public class CustomerManagementService {
 								while (checkInTimestampFromQuery.next()) 
 									checkInTimestamp = checkInTimestampFromQuery.getTimestamp("checkin_ts");
 								
-								Timestamp checkOutTimestamp = java.sql.Timestamp.valueOf(messageParsed[2]);	// O timestamp do checkout vem no evento
+								Timestamp checkOutTimestamp = java.sql.Timestamp.valueOf(timestamp);	// O timestamp do checkout vem no evento
 								
 								System.out.println("checkInTimestamp: " + checkInTimestamp + " | checkOutTimestamp: " + checkOutTimestamp);
 								
-								float price = 0;
-								float discount = 0;
-								if (!topic.equals("MonitorUber")) { 
-									price = calculatePriceOfTrip(checkInTimestamp, checkOutTimestamp); 
+								double price = 0.0;
+								double discount = studentDiscount;
 								
-									if (messageParsed[3].equals("true"))	//Se houver desconto, fica metade do preco
-										discount = price / 2;
-		
-									price = myRound(price);
-									discount = myRound(discount);
-								} else {
-									price = Float.parseFloat(messageParsed[3]);
-								}
+								if(tariff.equals("operatorPrice"))
+									price = operatorPrice;
+								if(tariff.equals("variablePrice"))
+									price = calculatePriceOfTrip(checkInTimestamp, checkOutTimestamp);
+								if(tariff.equals("fixedPrice"))
+									price = fixedPrice;
+								
+								price = myRound(price);
+								discount = price * discount;
+								discount = myRound(discount);	
+
 								System.out.println("UPDATE AccountManager " + 
 										  "SET offset= " + offset + ", checkout_ts= " + checkOutTimestamp + ", price= " + price + ", discount= " + discount + 
 										  " WHERE topic= " + topic + " AND user_id= " + userId + " AND offset= " + maxOffset + "\n");
@@ -258,8 +353,8 @@ public class CustomerManagementService {
 														 );
 								s.setLong(1, offset);
 								s.setTimestamp(2, checkOutTimestamp);
-								s.setFloat(3, price);
-								s.setFloat(4, discount);
+								s.setDouble(3, price);
+								s.setDouble(4, discount);
 								s.setString(5, topic);
 								s.setInt(6, userId);
 								s.setLong(7, maxOffset);
@@ -271,7 +366,7 @@ public class CustomerManagementService {
 
 						        String checkOutDate = timestampToDate(checkOutTimestamp);	//Devolve uma data no formato "2017-06-15"
 						        
-								float revenue = price - discount;
+								double revenue = price - discount;
 								revenue = myRound(revenue);
 								
 								String revenueOperatorTopic = getRevenueTopic(topic);
