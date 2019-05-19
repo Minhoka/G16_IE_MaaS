@@ -1,21 +1,33 @@
 Topic: Monitor<Operator>
 
 <checkIn>
-	<userId>12345</userId>
-	<timestamp>2019-04-27 15:30:26</timestamp>
+	<tariff>operatorPrice</tariff>
+	<userId>5</userId>
+	<timestamp>2019-04-27 15:34:26</timestamp>
 </checkIn>
 
+//variablePrice
 <checkOut>
-	<userId>12345</userId>
-	<timestamp>2019-04-27 16:15:00</timestamp>
-	<hasStudentDiscount>false</hasStudentDiscount>
+	<tariff>variablePrice</tariff>
+	<userId>6</userId>
+	<timestamp>2019-04-27 16:00:10</timestamp>
+	<hasStudentDiscount>0.5</hasStudentDiscount>
 </checkOut>
 
-//Uber
+//operatorPrice
 <checkOut>
+	<tariff>operatorPrice</tariff>
 	<userId>12345</userId>
 	<timestamp>2019-04-27 16:15:00</timestamp>
 	<operatorPrice>5.00</operatorPrice>
+</checkOut>
+
+//fixedPrice
+<checkOut>
+	<tariff>fixedPrice</tariff>
+	<userId>12345</userId>
+	<timestamp>2019-04-27 16:15:00</timestamp>
+	<fixedPrice>5.00</fixedPrice>
 </checkOut>
 
 -------------------------------------------------------------
