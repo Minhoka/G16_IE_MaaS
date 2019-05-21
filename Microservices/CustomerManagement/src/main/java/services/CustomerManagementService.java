@@ -46,7 +46,7 @@ public class CustomerManagementService {
 		try {
 			if(event.equals("checkOut")) {
 				PreparedStatement s = null; //so uma inicializacao
-				s = conn.prepareStatement("SELECT events_structure FROM operator_services WHERE operator =\"" + auxTopic + "\" AND tariff =\"" + tariff + "\"");
+				s = conn.prepareStatement("SELECT substr(events_structure, instr(events_structure,'|')+1, length(events_structure)) events_structure FROM operator_services WHERE operator =\"" + auxTopic + "\" AND tariff =\"" + tariff + "\"");
 				ResultSet rsetEventStructure = s.executeQuery();
 				if(rsetEventStructure.next()) {			
 					
@@ -56,9 +56,7 @@ public class CustomerManagementService {
 					
 					Document doc = builder.parse(input);
 					Element auxRoot = doc.getDocumentElement();
-						
-					//String auxEvent = auxRoot.getNodeName();	// checkIn || checkOut (TODO:atualmente só checkOut pode ser dinâmico)
-					
+											
 					NodeList rootElements = root.getElementsByTagName("*");
 					NodeList auxRootElements = auxRoot.getElementsByTagName("*");
 					
@@ -89,35 +87,49 @@ public class CustomerManagementService {
 
 				}
 			}
+			else if(event.equals("checkIn"))
+			{ 	//checkIn
+				PreparedStatement s = null; //so uma inicializacao
+				s = conn.prepareStatement("SELECT substr(events_structure, 1, instr(events_structure,'|')-1) events_structure FROM operator_services WHERE operator =\"" + auxTopic + "\" AND tariff =\"" + tariff + "\"");
+				ResultSet rsetEventStructure = s.executeQuery();
+				if(rsetEventStructure.next()) {			
+					
+					DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+					DocumentBuilder builder = factory.newDocumentBuilder();
+					ByteArrayInputStream input = new ByteArrayInputStream(rsetEventStructure.getString("events_structure").getBytes("UTF-8"));
+					
+					Document doc = builder.parse(input);
+					Element auxRoot = doc.getDocumentElement();
+					NodeList rootElements = root.getElementsByTagName("*");
+					NodeList auxRootElements = auxRoot.getElementsByTagName("*");
+					
+					if(auxRootElements.getLength() == rootElements.getLength())
+					{	
+						for ( int i = 0; i < auxRootElements.getLength(); i++)
+						{
+							if(!(auxRootElements.item(i).getNodeName().equals(rootElements.item(i).getNodeName()))) {
+								System.out.println(" Invalid Structure for " + tariff + " in " + topic + ". (name) \n");
+								throw new RuntimeException(" Invalid Structure for " + tariff + " in " + topic + ". (name) ");
+							}
+						}
+					}
+					else
+					{
+						System.out.println(" Invalid Structure for " + tariff + " in " + topic + ". (size) \n");
+						throw new RuntimeException(" Invalid Structure for " + tariff + " in " + topic + ". (size) ");
+					}
+					System.out.println(" Structure Validated for " + tariff + " in " + topic + ". \n");
+				}
+				else
+				{
+					System.out.println(" tariff " + tariff + " does not exist for " + topic + ". \n");
+					throw new RuntimeException(" tariff " + tariff + " does not exist for " + topic + ".");
+				}
+			}
 			else
 			{
-				//checkIn <checkIn><tariff>variablePrice</tariff><userId>4</userId><timestamp>2019-04-29 15:33:26</timestamp></checkIn>
-				if (root.getElementsByTagName("*") == null || root.getElementsByTagName("*").getLength() != 3)
-				{
-					System.out.println(" Invalid Structure for " + tariff + " in " + topic + ". (size) \n");
-					throw new RuntimeException(" Invalid Structure for " + tariff + " in " + topic + ". (size) \n");
-				}
-				else {
-					if (root.getElementsByTagName("tariff") == null && root.getElementsByTagName("tariff").item(0) == null)
-					{
-						System.out.println(" Invalid Structure for " + tariff + " in " + topic + ". (tariff) \n");
-						throw new RuntimeException(" Invalid Structure for " + tariff + " in " + topic + ". (tariff) \n");
-					}
-					if (root.getElementsByTagName("userId") == null && root.getElementsByTagName("userId").item(0) == null)
-					{
-						System.out.println(" Invalid Structure for " + tariff + " in " + topic + ". (userId) \n");
-						throw new RuntimeException(" Invalid Structure for " + tariff + " in " + topic + ". (userId) \n");
-					}
-					if (root.getElementsByTagName("timestamp") == null && root.getElementsByTagName("timestamp").item(0) == null)
-					{
-						System.out.println(" Invalid Structure for " + tariff + " in " + topic + ". (timestamp) \n");
-						throw new RuntimeException(" Invalid Structure for " + tariff + " in " + topic + ". (timestamp) \n");
-					}
-					
-				}
-				
-				System.out.println(" Structure Validated for " + tariff + " in " + topic + ". \n");
-		
+				System.out.println(" Event Type does not Exist - " + event + " \n");
+				throw new RuntimeException(" Event Type does not Exist -" + event + " \n");
 			}
 		} catch (SQLException | ParserConfigurationException | SAXException | IOException e) {
 			e.printStackTrace();
